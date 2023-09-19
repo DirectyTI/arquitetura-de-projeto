@@ -1,54 +1,21 @@
-import express, { Request, Response, Router } from 'express';
-import { PrismaClient } from '@prisma/client'; // Importe o PrismaClient
-import bcrypt from 'bcrypt';
+import express, { Router } from 'express';
+import UsuariosController from '../controllers/UsuariosController';
+import { UsuariosValidate } from '../middlewares/UsuariosValidate';
 
 class UsuariosRoute {
-  public router: Router;
+    public router: Router;
 
-  constructor() {
-    this.router = express.Router();
-    this.initializeRoutes();
-  }
-
-  private initializeRoutes() {
-    this.router.post('/', this.createUsuario);
-  }
-
-  private async createUsuario(req: Request, res: Response) {
-    const { nome, login, senha, email, telefone, tipo, aceitou_termos, localidade, foto, estado,  municipio, familia, lat, lon, linguagem } = req.body;
-
-    const hashedSenha = await bcrypt.hash(senha, 10);
-
-    const prisma = new PrismaClient();
-    try {
-      await prisma.usuarios.create({
-        data: {
-            nome,
-            login,
-            senha: hashedSenha,
-            email,
-            telefone,
-            tipo,             
-            aceitou_termos,   
-            localidade,      
-            foto,           
-            estado,                
-            municipio,             
-            familia,            
-            lat,              
-            lon,                  
-            linguagem,             
-        },
-      });
-      
-      res.status(201).json({ message: `Usuario ${nome} criado com sucesso`});
-    } catch (error) {
-      console.error('Erro ao criar um novo usuário:', error);
-      res.status(500).json({ error: 'Erro interno do servidor' });
-    } finally {
-      await prisma.$disconnect();
+    constructor() {
+        this.router = express.Router();
+        this.initializeRoutes();
     }
-  }
+
+    private initializeRoutes() {
+        this.router.post('/', UsuariosValidate.validateCriacaoUsuario, UsuariosController.createUsuario);
+        this.router.put('/:id', UsuariosValidate.validateUpdateSenhaUsuario, UsuariosController.updateSenhaUsuario);
+        this.router.get('/', UsuariosController.getAllUsuariosByName);
+        this.router.delete('/:id', UsuariosController.deleteUsuarioById);
+    }
 }
 
 export default new UsuariosRoute().router;
